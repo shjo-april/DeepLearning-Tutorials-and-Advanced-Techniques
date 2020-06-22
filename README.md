@@ -4,15 +4,17 @@
 
 ## 1. Installation
 
-## 2. Classification
+## 2. Python
 
-## 3. Detection
+## 3. Classification
 
-## 4. Segmentation
+## 4. Detection
 
-## 5. Generation
+## 5. Segmentation
 
-## 6. Domain Adaptation
+## 6. Generation
 
-## 7. Anomaly Detection
+## 7. Domain Adaptation
+
+## 8. Anomaly Detection
 
