@@ -24,7 +24,7 @@ for tag, json_path in zip(tags, json_paths):
         label = data_dic[image_path]
         
         encoded_image = encode_image(image)
-
+        
         key = os.path.basename(image_path)
         example = {
             'image_path' : image_path,
