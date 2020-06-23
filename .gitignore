@@ -1,0 +1,18 @@
+
+# for model 
+*/experiments/*
+
+*.data*
+*.index*
+checkpoint
+
+*.pb
+*.tflite
+
+# for dataset
+*/mnist/*
+
+*.pkl
+*.tfrecord
+*.sanghyun
+
