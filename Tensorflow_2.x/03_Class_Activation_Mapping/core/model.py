@@ -26,8 +26,8 @@ class Inception_ResNet_v2_with_CAM(tf.keras.Model):
         self.flatten = tf.keras.layers.Flatten()
 
     def call(self, images, training=None, using_cam=False):
-
-        x = self.backbone(images)
+        x = tf.keras.applications.inception_resnet_v2.preprocess_input(images[..., ::-1])
+        x = self.backbone(x)
 
         if using_cam:
             x = self.fc(x)
