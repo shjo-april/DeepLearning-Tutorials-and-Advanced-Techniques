@@ -13,11 +13,11 @@ max_image_size = int(image_size * 1.25)
 min_image_size = max_image_size // 2
 
 train_transforms = DataAugmentation(
-        [
-            Random_Resize(min_image_size, max_image_size),
-            Random_HorizontalFlip(),
-            Random_Crop_with_Black((image_size, image_size))
-        ]
+    [
+        Random_Resize(min_image_size, max_image_size),
+        Random_HorizontalFlip(),
+        Random_Crop_with_Black((image_size, image_size))
+    ]
 )
 
 test_transforms = DataAugmentation(
@@ -57,7 +57,7 @@ def train(model, optimizer, dataset, log_freq=50):
     def train_step(images, labels):
         with tf.GradientTape() as tape:
             logits = model(images, training=True)
-
+            
             loss = loss_fn(labels, logits)
             accuracy = accuracy_fn(labels, logits)
 
