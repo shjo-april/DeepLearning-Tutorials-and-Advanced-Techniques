@@ -1,6 +1,7 @@
 # Copyright (C) 2020 * Ltd. All rights reserved.
 # author : Sanghyeon Jo <josanghyeokn@gmail.com>
 
+import os
 import cv2
 import time
 import json
@@ -10,12 +11,17 @@ import datetime
 import numpy as np
 import xml.etree.ElementTree as ET
 
+def create_directory(dir_path):
+    if not os.path.isdir(dir_path):
+        os.makedirs(dir_path)
+    return dir_path
+
 def crf_inference(img, probs, t=10, scale_factor=1, labels=21):
     import pydensecrf.densecrf as dcrf
     from pydensecrf.utils import unary_from_softmax
 
     probs = probs.transpose((2, 0, 1))
-
+    
     h, w = img.shape[:2]
     n_labels = labels
 

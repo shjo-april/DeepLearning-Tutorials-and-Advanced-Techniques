@@ -1,3 +1,4 @@
+import os
 
 from data import utils
 
@@ -10,6 +11,9 @@ class Sanghyun_Writer:
         self.the_number_of_example = the_number_of_example
         
         self.dataset = {}
+
+        if not os.path.isdir(dataset_dir):
+            os.makedirs(dataset_dir)
     
     def __call__(self, key, example):    
         self.accumulated_size += 1

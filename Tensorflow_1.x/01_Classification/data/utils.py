@@ -22,7 +22,7 @@ def customized_split_using_section(dataset, the_number_of_section, shuffle=True)
 def customized_split_using_size(dataset, the_size_of_section, shuffle=True):
     if shuffle:
         np.random.shuffle(dataset)
-
+    
     split_dataset = []
     while len(dataset) > 0:
         split_dataset.append(dataset[:the_size_of_section])

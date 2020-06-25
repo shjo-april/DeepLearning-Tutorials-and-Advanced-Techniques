@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     print('close')
     train_reader.close()
-
+    
     # with RandAugment = 2.015sec
     # without RandAugment = 1.412sec
     print('{}ms'.format(timer.tok(ms=True)))
