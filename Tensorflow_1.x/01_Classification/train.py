@@ -218,7 +218,7 @@ if __name__ == '__main__':
             for images, labels in test_reader:
                 accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
                 valid_accuracy.append(accuracy)
-                            
+
             test_sec = timer.tok()
             test_reader.close()
             
@@ -230,6 +230,8 @@ if __name__ == '__main__':
                 saver.save(sess, ckpt_dir + '{}.ckpt'.format(epoch + 1))
 
     saver.save(sess, ckpt_dir + 'end.ckpt')
+
+    
 
 # tflite and pb files
 

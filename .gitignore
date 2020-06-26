@@ -4,10 +4,14 @@
 
 *.data*
 *.index*
+*.meta*
 checkpoint
 
 *.pb
 *.tflite
+
+# for tensorboard
+*.tfevents.*
 
 # for dataset
 */mnist/*
