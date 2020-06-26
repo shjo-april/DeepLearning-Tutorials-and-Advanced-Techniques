@@ -90,7 +90,7 @@ if __name__ == '__main__':
         'names' : ['image', 'label']
     }
     test_reader = Sanghyun_Reader(**test_reader_option)
-    
+
     # Build the model for training.
     train_option = {
         'is_training' : True,
@@ -215,16 +215,10 @@ if __name__ == '__main__':
             timer.tik()
             test_reader.start()
 
-            print('start test_reader')
-            
             for images, labels in test_reader:
-                print(images.shape)
-                
                 accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
                 valid_accuracy.append(accuracy)
-            
-            print('end test_reader')
-            
+                            
             test_sec = timer.tok()
             test_reader.close()
             

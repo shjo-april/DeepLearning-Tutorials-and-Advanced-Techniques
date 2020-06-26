@@ -176,11 +176,11 @@ class Sanghyun_Reader:
                     self.dataset[name].append(d)
             
             return self.get_dataset()
-            
+
         except StopIteration:
             self.init_dataset()
             raise StopIteration
-
+        
         # for data in self.iterator_of_decoder:
         #     for name, d in zip(self.names, data):
         #         self.dataset[name].append(d)
