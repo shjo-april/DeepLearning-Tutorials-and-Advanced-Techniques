@@ -55,6 +55,7 @@ if __name__ == '__main__':
 
     size = 0
     for images, labels in train_reader:
+        print(images.shape[0])
         size += images.shape[0]
 
     print('close')

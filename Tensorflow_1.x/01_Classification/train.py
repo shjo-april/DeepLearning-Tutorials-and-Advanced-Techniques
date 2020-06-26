@@ -20,7 +20,7 @@ from utility.timer import *
 
 if __name__ == '__main__':
     args = get_config()
-
+    
     os.environ["CUDA_VISIBLE_DEVICES"] = args.use_gpu
 
     gpu_id = int(args.use_gpu)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
         transforms = RandAugmentation()
     else:
         transforms = Random_HorizontalFlip()
-    
+
     train_transforms = DataAugmentation(
         [
             Random_Resize(min_image_size, max_image_size),
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         'names' : ['image', 'label']
     }
     test_reader = Sanghyun_Reader(**test_reader_option)
-
+    
     # Build the model for training.
     train_option = {
         'is_training' : True,
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         
         train_loss = []
         train_accuracy = []
-
+        
         timer.tik()
         train_reader.start()
 
@@ -206,29 +206,36 @@ if __name__ == '__main__':
         
         train_loss = np.mean(train_loss)
         train_accuracy = np.mean(train_accuracy)
-
+        
         print('[i] epoch={}, iteration={}, loss={:.6f}, accuracy={:.2f}%, {}sec'.format(epoch + 1, iteration, train_loss, train_accuracy, train_sec))
 
-        valid_accuracy = []
+        if (epoch + 1) % 5 == 0:
+            valid_accuracy = []
 
-        timer.tik()
-        test_reader.start()
+            timer.tik()
+            test_reader.start()
 
-        for images, labels in test_reader:
-            accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
+            print('start test_reader')
+            
+            for images, labels in test_reader:
+                print(images.shape)
+                
+                accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
+                valid_accuracy.append(accuracy)
+            
+            print('end test_reader')
+            
+            test_sec = timer.tok()
+            test_reader.close()
+            
+            valid_accuracy = np.mean(valid_accuracy)
+            print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}%, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
 
-            valid_accuracy.append(accuracy)
-
-        test_sec = timer.tok()
-        test_reader.close()
-        
-        valid_accuracy = np.mean(valid_accuracy)
-        if valid_accuracy > best_valid_accuracy:
-            best_valid_accuracy = valid_accuracy
-            saver.save(sess, ckpt_dir + '{}.ckpt'.format(epoch))
-
-        print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
+            if valid_accuracy > best_valid_accuracy:
+                best_valid_accuracy = valid_accuracy
+                saver.save(sess, ckpt_dir + '{}.ckpt'.format(epoch + 1))
 
     saver.save(sess, ckpt_dir + 'end.ckpt')
 
 # tflite and pb files
+

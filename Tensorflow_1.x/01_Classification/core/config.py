@@ -8,7 +8,7 @@ def get_config():
     parser.add_argument('--classes', default=5, type=int)
     
     parser.add_argument('--use_gpu', default='0', type=str)
-
+    
     parser.add_argument('--optimizer', default='momentum', type=str)
     
     parser.add_argument('--learning_rate', default=0.016, type=float)

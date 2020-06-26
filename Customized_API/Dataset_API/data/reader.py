@@ -95,16 +95,20 @@ class Sanghyun_Reader:
 
         self.the_size_of_loading_files = min(5, len(sanghyun_paths))
         
+        self.decode_fn = decode_fn
+
+        self.the_number_of_loader = the_number_of_loader
+        self.the_number_of_decoder = the_number_of_decoder
+
+        self.names = names
+        self.init_dataset()
+
+    def start(self):
         self.queue_of_loader = mp.Queue(maxsize=2)
         self.queue_of_decoder = mp.Queue(maxsize=self.batch_size)
 
         self.iterator_of_loader = Customized_Iterator(self.queue_of_loader)
         self.iterator_of_decoder = Customized_Iterator(self.queue_of_decoder)
-
-        self.decode_fn = decode_fn
-
-        self.the_number_of_loader = the_number_of_loader
-        self.the_number_of_decoder = the_number_of_decoder
 
         self.loader_option = {
             'queue' : self.queue_of_loader,
@@ -121,10 +125,6 @@ class Sanghyun_Reader:
             'decode_func' : self.decode_fn,
         }
 
-        self.names = names
-        self.init_dataset()
-
-    def start(self):
         self.loaders = [Loader(**self.loader_option) for _ in range(self.the_number_of_loader)]
         self.decoders = [Decoder(**self.decoder_option) for _ in range(self.the_number_of_decoder)]
 
@@ -141,6 +141,18 @@ class Sanghyun_Reader:
         for obj in self.decoders:
             obj.close()
 
+        del self.queue_of_loader
+        del self.queue_of_decoder
+
+        del self.iterator_of_loader
+        del self.iterator_of_decoder
+
+        del self.loader_option
+        del self.decoder_option
+
+        del self.loaders
+        del self.decoders
+
     def init_dataset(self):
         self.dataset = {name : [] for name in self.names}
         self.dataset['length'] = 0
@@ -154,16 +166,31 @@ class Sanghyun_Reader:
         return self
 
     def __next__(self):
-        for data in self.iterator_of_decoder:
-            for name, d in zip(self.names, data):
-                self.dataset[name].append(d)
+        
+        try:
+            for _ in range(self.batch_size):
+                data = next(self.iterator_of_decoder)
 
-            self.dataset['length'] += 1
-            if self.dataset['length'] == self.batch_size:
-                return self.get_dataset()
+                self.dataset['length'] += 1
+                for name, d in zip(self.names, data):
+                    self.dataset[name].append(d)
             
-        if not self.drop_remainder and self.dataset['length'] > 0:
             return self.get_dataset()
+            
+        except StopIteration:
+            self.init_dataset()
+            raise StopIteration
 
-        raise StopIteration
+        # for data in self.iterator_of_decoder:
+        #     for name, d in zip(self.names, data):
+        #         self.dataset[name].append(d)
+
+        #     self.dataset['length'] += 1
+        #     if self.dataset['length'] == self.batch_size:
+        #         yield self.get_dataset()
+            
+        # if not self.drop_remainder and self.dataset['length'] > 0:
+        #     yield self.get_dataset()
+        
+        # raise StopIteration
         
