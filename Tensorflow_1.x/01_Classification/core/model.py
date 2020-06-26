@@ -31,6 +31,7 @@ class EfficientNet_Lite:
         
         with tf.variable_scope('Classifier'):
             x = tf.reduce_mean(x['reduction_5'], axis=[1, 2])
-            logits_op = tf.layers.dense(x, units=self.classes, name = 'outputs')
+            logits_op = tf.layers.dense(x, units=self.classes, name='logits')
+            predictions_op = tf.nn.softmax(logits_op, name='predictions')
 
         return logits_op

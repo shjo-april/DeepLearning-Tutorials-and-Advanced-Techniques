@@ -32,6 +32,9 @@ if __name__ == '__main__':
 
     tensorboard_dir = create_directory(experiments_dir + 'tensorboard/')
 
+    pb_name = '{}.pb'.format(args.dataset_name)
+    tflite_name = '{}.tflite'.format(args.dataset_name)
+
     # Define training dataset and testing dataset.
     image_size = args.image_size
     max_image_size = int(image_size * 1.25)
@@ -138,7 +141,7 @@ if __name__ == '__main__':
         train_op = optimizer.minimize(loss_op, colocate_gradients_with_ops=True)
 
     # Build the model for testing.
-    test_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3])
+    test_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3], name='images')
     test_label_var = tf.placeholder(tf.int64, [None])
 
     test_option = {
@@ -152,7 +155,7 @@ if __name__ == '__main__':
 
     correct_op = tf.equal(tf.argmax(test_logits_op, axis = 1), test_label_var)
     test_accuracy_op = tf.reduce_mean(tf.cast(correct_op, tf.float32)) * 100
-
+    
     # Build history of the model for monitoring
     train_summary_dic = {
         'losses/total_loss' : loss_op,
@@ -183,55 +186,75 @@ if __name__ == '__main__':
     timer = Timer()
 
     iteration = 0
+
     best_valid_accuracy = -1
+    best_valid_path = None
 
-    for epoch in range(args.max_epochs):
+    # for epoch in range(args.max_epochs):
         
-        train_loss = []
-        train_accuracy = []
+    #     train_loss = []
+    #     train_accuracy = []
         
-        timer.tik()
-        train_reader.start()
+    #     timer.tik()
+    #     train_reader.start()
 
-        for images, labels in train_reader:
-            _, loss, accuracy, summary = sess.run([train_op, loss_op, train_accuracy_op, train_summary_op], feed_dict={train_image_var : images, train_label_var : labels, global_step:epoch})
+    #     for images, labels in train_reader:
+    #         _, loss, accuracy, summary = sess.run([train_op, loss_op, train_accuracy_op, train_summary_op], feed_dict={train_image_var : images, train_label_var : labels, global_step:epoch})
 
-            train_loss.append(loss)
-            train_accuracy.append(accuracy)
+    #         train_loss.append(loss)
+    #         train_accuracy.append(accuracy)
 
-            train_writer.add_summary(summary, iteration); iteration += 1
+    #         train_writer.add_summary(summary, iteration); iteration += 1
         
-        train_sec = timer.tok()
-        train_reader.close()
+    #     train_sec = timer.tok()
+    #     train_reader.close()
         
-        train_loss = np.mean(train_loss)
-        train_accuracy = np.mean(train_accuracy)
+    #     train_loss = np.mean(train_loss)
+    #     train_accuracy = np.mean(train_accuracy)
         
-        print('[i] epoch={}, iteration={}, loss={:.6f}, accuracy={:.2f}%, {}sec'.format(epoch + 1, iteration, train_loss, train_accuracy, train_sec))
+    #     print('[i] epoch={}, iteration={}, loss={:.6f}, accuracy={:.2f}%, {}sec'.format(epoch + 1, iteration, train_loss, train_accuracy, train_sec))
 
-        if (epoch + 1) % 5 == 0:
-            valid_accuracy = []
-
-            timer.tik()
-            test_reader.start()
-
-            for images, labels in test_reader:
-                accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
-                valid_accuracy.append(accuracy)
-
-            test_sec = timer.tok()
-            test_reader.close()
+    #     if (epoch + 1) % 5 == 0:
+    #         valid_accuracy = []
             
-            valid_accuracy = np.mean(valid_accuracy)
-            print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}%, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
+    #         timer.tik()
+    #         test_reader.start()
 
-            if valid_accuracy > best_valid_accuracy:
-                best_valid_accuracy = valid_accuracy
-                saver.save(sess, ckpt_dir + '{}.ckpt'.format(epoch + 1))
+    #         for images, labels in test_reader:
+    #             accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
+    #             valid_accuracy.append(accuracy)
 
-    saver.save(sess, ckpt_dir + 'end.ckpt')
-
+    #         test_sec = timer.tok()
+    #         test_reader.close()
+            
+    #         valid_accuracy = np.mean(valid_accuracy)
+    #         print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}%, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
     
+    #         if valid_accuracy > best_valid_accuracy:
+    #             best_valid_accuracy = valid_accuracy
+    #             best_valid_path = ckpt_dir + '{}.ckpt'.format(epoch + 1) 
 
-# tflite and pb files
+    #             saver.save(sess, best_valid_path)
+
+    # saver.save(sess, ckpt_dir + 'end.ckpt')
+
+    # Create ckpt file to pb file.
+    saver.restore(sess, best_valid_path)
+    create_pb_file(sess, pb_dir, pb_name)
+
+    print('[i] Create pb file. ({})'.format(pb_dir + pb_name))
+    
+    # Create ckpt file to tflite file.
+    pb_path = pb_dir + pb_name
+    
+    input_arrays = ['images']
+    output_arrays = ['Classifier/predictions']
+
+    converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(pb_path, input_arrays, output_arrays)
+    tflite_model = converter.convert()
+
+    open(tflite_dir + tflite_name, "wb").write(tflite_model)
+
+    print('[i] Create tflite file. ({})'.format(tflite_dir + tflite_name))
+
 
