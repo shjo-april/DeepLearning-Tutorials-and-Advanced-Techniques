@@ -17,8 +17,8 @@ def get_config():
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--image_size', default=224, type=int)
 
-    parser.add_argument('--augmentation', default='RandAugment', type=str)
-    
+    parser.add_argument('--augmentation', default='Default', type=str)
+
     parser.add_argument('--max_epochs', default=100, type=int)
     parser.add_argument('--weight_decay', default=1e-5, type=float)
     
