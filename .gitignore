@@ -20,5 +20,5 @@ checkpoint
 *.tfrecord
 *.sanghyun
 
-# for cache file
+# for cache files
 *.pyc
