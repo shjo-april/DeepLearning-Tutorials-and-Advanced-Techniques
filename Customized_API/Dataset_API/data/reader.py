@@ -180,17 +180,4 @@ class Sanghyun_Reader:
         except StopIteration:
             self.init_dataset()
             raise StopIteration
-
-        # for data in self.iterator_of_decoder:
-        #     for name, d in zip(self.names, data):
-        #         self.dataset[name].append(d)
-
-        #     self.dataset['length'] += 1
-        #     if self.dataset['length'] == self.batch_size:
-        #         yield self.get_dataset()
-            
-        # if not self.drop_remainder and self.dataset['length'] > 0:
-        #     yield self.get_dataset()
-        
-        # raise StopIteration
         
