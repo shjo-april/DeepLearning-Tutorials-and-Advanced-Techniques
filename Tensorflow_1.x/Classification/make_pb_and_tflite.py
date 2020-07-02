@@ -29,15 +29,15 @@ if __name__ == '__main__':
 
     class_names = [line.strip() for line in open('./dataset/{}/class_names.txt'.format(args.dataset_name)).readlines()]
     classes = len(class_names)
-
+    
     pb_dir = create_directory(experiments_dir + 'pb/')
     ckpt_dir = create_directory(experiments_dir + 'ckpt/')
     tflite_dir = create_directory(experiments_dir + 'tflite/')
 
     tensorboard_dir = create_directory(experiments_dir + 'tensorboard/')
-
-    pb_name = '{}.pb'.format(args.dataset_name)
-    tflite_name = '{}.tflite'.format(args.dataset_name)
+    
+    pb_name = 'model.pb'
+    tflite_name = 'model.tflite'
 
     test_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3], name='images')
     
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     model_name = line.strip().replace('all_model_checkpoint_paths: ', '').replace('\"', '')
 
     best_valid_path = ckpt_dir + model_name
-
+    
     saver.restore(sess, best_valid_path)
     create_pb_file(sess, pb_dir, pb_name)
 
