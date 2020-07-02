@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from core.for_augmentation.functions import Fixed_Resize, Top_Left_Crop
+from utility.utils import *
+from core.for_augmentation.functions import *
 
 class Model:
     def load_graph(self, frozen_graph_filename):
@@ -22,7 +23,7 @@ class Classifier(Model):
         self.image_var = self.graph.get_tensor_by_name('prefix/images:0')
         self.predictions_op = self.graph.get_tensor_by_name('prefix/Classifier/predictions:0')
 
-        shape = self.input_var.shape.as_list()
+        shape = self.image_var.shape.as_list()
         _, self.height, self.width, _ = shape
 
         config = tf.ConfigProto()
@@ -46,7 +47,7 @@ class Classifier(Model):
         image = self.resize_func(image)
         image = self.crop_func(image)
 
-        class_prob = self.sess.run(self.classifier_op, feed_dict = {self.input_var : [image]})[0]
+        class_prob = self.sess.run(self.predictions_op, feed_dict = {self.image_var : [image]})[0]
 
         class_index = np.argmax(class_prob)
         class_prob = class_prob[class_index]
@@ -62,4 +63,15 @@ if __name__ == '__main__':
 
     config = get_config()
 
+    model = Classifier(config.dataset_name)
+
+    data_dic = read_json('./dataset/{}/test.json'.format(config.dataset_name))
     
+    for image_path in sorted(data_dic.keys()):
+        image = cv2.imread(image_path)
+        label = data_dic[image_path]
+
+        class_name, class_prob = model.predict(image)
+
+        print('# {}, GT = {}, Prediction {} = {:.2f}%'.format(image_path, model.class_names[label], class_name, class_prob * 100))
+
