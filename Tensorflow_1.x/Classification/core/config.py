@@ -5,8 +5,6 @@ def get_config():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset_name', default='flower_photos', type=str)
-    parser.add_argument('--classes', default=5, type=int)
-    
     parser.add_argument('--use_gpu', default='0', type=str)
     
     parser.add_argument('--optimizer', default='momentum', type=str)
@@ -20,6 +18,8 @@ def get_config():
     parser.add_argument('--augmentation', default='Default', type=str)
 
     parser.add_argument('--max_epochs', default=100, type=int)
+    parser.add_argument('--validation_epochs', default=10, type=int)
+
     parser.add_argument('--weight_decay', default=1e-5, type=float)
     
     return parser.parse_args()

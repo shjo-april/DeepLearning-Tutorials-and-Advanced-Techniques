@@ -27,6 +27,9 @@ if __name__ == '__main__':
     gpu_id = int(args.use_gpu)
     experiments_dir = './experiments/{}/'.format(args.dataset_name)
 
+    class_names = [line.strip() for line in open('./dataset/{}/class_names.txt'.format(args.dataset_name)).readlines()]
+    classes = len(class_names)
+
     pb_dir = create_directory(experiments_dir + 'pb/')
     ckpt_dir = create_directory(experiments_dir + 'ckpt/')
     tflite_dir = create_directory(experiments_dir + 'tflite/')
@@ -40,7 +43,7 @@ if __name__ == '__main__':
     
     test_option = {
         'is_training' : False,
-        'classes' : args.classes
+        'classes' : classes
     }
 
     with tf.device(tf.DeviceSpec(device_type = "GPU", device_index = 0)):

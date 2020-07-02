@@ -94,10 +94,13 @@ if __name__ == '__main__':
     }
     test_reader = Sanghyun_Reader(**test_reader_option)
 
+    class_names = [line.strip() for line in open('./dataset/{}/class_names.txt'.format(args.dataset_name)).readlines()]
+    classes = len(class_names)
+
     # Build the model for training.
     train_option = {
         'is_training' : True,
-        'classes' : args.classes
+        'classes' : classes
     }
 
     train_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3])
@@ -146,7 +149,7 @@ if __name__ == '__main__':
 
     test_option = {
         'is_training' : False,
-        'classes' : args.classes
+        'classes' : classes
     }
 
     with tf.device(tf.DeviceSpec(device_type = "GPU", device_index = gpu_id)):
@@ -190,71 +193,51 @@ if __name__ == '__main__':
     best_valid_accuracy = -1
     best_valid_path = None
 
-    # for epoch in range(args.max_epochs):
+    for epoch in range(args.max_epochs):
         
-    #     train_loss = []
-    #     train_accuracy = []
+        train_loss = []
+        train_accuracy = []
         
-    #     timer.tik()
-    #     train_reader.start()
+        timer.tik()
+        train_reader.start()
 
-    #     for images, labels in train_reader:
-    #         _, loss, accuracy, summary = sess.run([train_op, loss_op, train_accuracy_op, train_summary_op], feed_dict={train_image_var : images, train_label_var : labels, global_step:epoch})
+        for images, labels in train_reader:
+            _, loss, accuracy, summary = sess.run([train_op, loss_op, train_accuracy_op, train_summary_op], feed_dict={train_image_var : images, train_label_var : labels, global_step:epoch})
 
-    #         train_loss.append(loss)
-    #         train_accuracy.append(accuracy)
+            train_loss.append(loss)
+            train_accuracy.append(accuracy)
 
-    #         train_writer.add_summary(summary, iteration); iteration += 1
+            train_writer.add_summary(summary, iteration); iteration += 1
         
-    #     train_sec = timer.tok()
-    #     train_reader.close()
+        train_sec = timer.tok()
+        train_reader.close()
         
-    #     train_loss = np.mean(train_loss)
-    #     train_accuracy = np.mean(train_accuracy)
+        train_loss = np.mean(train_loss)
+        train_accuracy = np.mean(train_accuracy)
         
-    #     print('[i] epoch={}, iteration={}, loss={:.6f}, accuracy={:.2f}%, {}sec'.format(epoch + 1, iteration, train_loss, train_accuracy, train_sec))
+        print('[i] epoch={}, iteration={}, loss={:.6f}, accuracy={:.2f}%, {}sec'.format(epoch + 1, iteration, train_loss, train_accuracy, train_sec))
 
-    #     if (epoch + 1) % 5 == 0:
-    #         valid_accuracy = []
+        if (epoch + 1) % args.validation_epochs == 0:
+            valid_accuracy = []
             
-    #         timer.tik()
-    #         test_reader.start()
+            timer.tik()
+            test_reader.start()
 
-    #         for images, labels in test_reader:
-    #             accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
-    #             valid_accuracy.append(accuracy)
+            for images, labels in test_reader:
+                accuracy = sess.run(test_accuracy_op, feed_dict={test_image_var : images, test_label_var : labels})
+                valid_accuracy.append(accuracy)
 
-    #         test_sec = timer.tok()
-    #         test_reader.close()
+            test_sec = timer.tok()
+            test_reader.close()
             
-    #         valid_accuracy = np.mean(valid_accuracy)
-    #         print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}%, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
+            valid_accuracy = np.mean(valid_accuracy)
+            print('[i] epoch={}, valid_accuracy={:.2f}%, best_valid_accuracy={:.2f}%, {}sec'.format(epoch + 1, valid_accuracy, best_valid_accuracy, test_sec))
     
-    #         if valid_accuracy > best_valid_accuracy:
-    #             best_valid_accuracy = valid_accuracy
-    #             best_valid_path = ckpt_dir + '{}.ckpt'.format(epoch + 1) 
+            if valid_accuracy > best_valid_accuracy:
+                best_valid_accuracy = valid_accuracy
+                best_valid_path = ckpt_dir + '{}.ckpt'.format(epoch + 1) 
 
-    #             saver.save(sess, best_valid_path)
+                saver.save(sess, best_valid_path)
 
     # saver.save(sess, ckpt_dir + 'end.ckpt')
-
-    # Create ckpt file to pb file.
-    saver.restore(sess, best_valid_path)
-    create_pb_file(sess, pb_dir, pb_name)
-
-    print('[i] Create pb file. ({})'.format(pb_dir + pb_name))
-    
-    # Create ckpt file to tflite file.
-    pb_path = pb_dir + pb_name
-    
-    input_arrays = ['images']
-    output_arrays = ['Classifier/predictions']
-
-    converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(pb_path, input_arrays, output_arrays)
-    tflite_model = converter.convert()
-
-    open(tflite_dir + tflite_name, "wb").write(tflite_model)
-
-    print('[i] Create tflite file. ({})'.format(tflite_dir + tflite_name))
-
 
