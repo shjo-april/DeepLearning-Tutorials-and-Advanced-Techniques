@@ -1,5 +1,8 @@
 FROM tensorflow/tensorflow:latest-gpu
 
+# install tensorflow dataset
+ADD pip3 install tensorflow-datasets
+
 # install OpenCV
 ARG DEBIAN_FRONTEND=noninteractive
 
