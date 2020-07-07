@@ -15,6 +15,9 @@ checkpoint
 
 # for dataset
 */mnist/*
+*/flower_photos/*
+*/HMDB51/*
+*/UCF-101/*
 
 *.pkl
 *.tfrecord
