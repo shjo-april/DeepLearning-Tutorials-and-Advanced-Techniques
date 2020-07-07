@@ -52,13 +52,29 @@ if __name__ == '__main__':
             Random_Crop_with_Black((image_size, image_size))
         ]
     )
+
+    test_transforms = DataAugmentation(
+        [
+            Fixed_Resize((image_size, image_size)),
+            Top_Left_Crop((image_size, image_size))
+        ]
+    )
     
-    def decoder_func(example):
+    def decoder_func_for_training(example):
         image = example['encoded_image']
         label = example['label']
 
         image = decode_image(image)
         image = train_transforms(image)
+
+        return image, label
+
+    def decoder_func_for_testing(example):
+        image = example['encoded_image']
+        label = example['label']
+
+        image = decode_image(image)
+        image = test_transforms(image)
 
         return image, label
 
@@ -74,7 +90,7 @@ if __name__ == '__main__':
         'the_number_of_loader' : 1, 
         'the_number_of_decoder' : the_number_of_cpu_cores // 2, 
         
-        'decode_fn' : decoder_func,
+        'decode_fn' : decoder_func_for_training,
         'names' : ['image', 'label']
     }
     train_reader = Sanghyun_Reader(**train_reader_option)
@@ -89,7 +105,7 @@ if __name__ == '__main__':
         'the_number_of_loader' : 1, 
         'the_number_of_decoder' : the_number_of_cpu_cores // 2, 
         
-        'decode_fn' : decoder_func,
+        'decode_fn' : decoder_func_for_testing,
         'names' : ['image', 'label']
     }
     test_reader = Sanghyun_Reader(**test_reader_option)
