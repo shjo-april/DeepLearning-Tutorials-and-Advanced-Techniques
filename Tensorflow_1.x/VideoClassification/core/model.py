@@ -9,6 +9,63 @@ import core.efficientnet.efficientnet_lite_builder as efficientnet_lite
 # 2. EfficientNet-ConvLSTM
 # 3. I3D
 
+class VGG16_BN_3D:
+    def __init__(self, is_training, classes):
+        self.is_training = is_training
+        self.classes = classes
+
+        self.mean = tf.constant(efficientnet.MEAN_RGB)
+        self.std  = tf.constant(efficientnet.STDDEV_RGB)
+
+    def conv_bn_relu(self, x, filters, kernel_size):
+        x = tf.layers.conv3d(x, filters, kernel_size, padding='same')
+        x = tf.layers.batch_normalization(x, training=self.is_training)
+        x = tf.nn.relu(x)
+        return x
+
+    def __call__(self, x, initial_feature_size=32):
+        x = (x[..., ::-1] - self.mean) / self.std
+
+        with tf.variable_scope('block1'):
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = tf.layers.max_pooling3d(x, [1, 2, 2], [1, 2, 2])
+            initial_feature_size *= 2
+            print(x)
+
+        with tf.variable_scope('block2'):
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = tf.layers.max_pooling3d(x, [1, 2, 2], [1, 2, 2])
+            initial_feature_size *= 2
+            print(x)
+
+        with tf.variable_scope('block3'):
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = tf.layers.max_pooling3d(x, [1, 2, 2], [1, 2, 2])
+            initial_feature_size *= 2
+            print(x)
+
+        with tf.variable_scope('block4'):
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = tf.layers.max_pooling3d(x, [1, 2, 2], [1, 2, 2])
+            print(x)
+
+        with tf.variable_scope('block5'):
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = self.conv_bn_relu(x, initial_feature_size, [3, 3, 3])
+            x = tf.layers.max_pooling3d(x, [1, 2, 2], [1, 2, 2])
+            print(x)
+
+        with tf.variable_scope('Classifier'):
+            x = tf.reduce_mean(x, axis=[1, 2, 3])
+            logits_op = tf.layers.dense(x, units=self.classes, name='logits')
+            predictions_op = tf.nn.softmax(logits_op, name='predictions')
+
+        return logits_op
+
 class EfficientNet_Lite:
     def __init__(self, is_training, classes):
         self.is_training = is_training

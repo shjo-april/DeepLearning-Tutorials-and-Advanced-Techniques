@@ -41,7 +41,8 @@ if __name__ == '__main__':
     min_image_size = max_image_size // 2
 
     if args.augmentation == 'RandAugment':
-        transforms = RandAugmentation()
+        # transforms = RandAugmentation()
+        pass
     else:
         transforms = Random_HorizontalFlip()
 
@@ -52,15 +53,37 @@ if __name__ == '__main__':
             Random_Crop_with_Black((image_size, image_size))
         ]
     )
+
+    test_transforms = DataAugmentation(
+        [
+            Fixed_Resize((image_size, image_size)),
+            Top_Left_Crop((image_size, image_size)),
+        ]
+    )
     
-    def decoder_func(example):
-        image = example['encoded_image']
+    def decoder_func_for_training(example):
+        encoded_frames = example['encoded_frames']
         label = example['label']
 
-        image = decode_image(image)
-        image = train_transforms(image)
+        indices = range(len(encoded_frames))
+        indices = sorted(random.sample(indices, args.the_number_of_frame))
 
-        return image, label
+        frames = [decode_image(encoded_frames[index]) for index in indices]
+        frames = train_transforms(frames)
+
+        return frames, label
+
+    def decoder_func_for_testing(example):
+        encoded_frames = example['encoded_frames']
+        label = example['label']
+        
+        length = len(encoded_frames)
+        indices = list(range(0, length, length // args.the_number_of_frame))[:args.the_number_of_frame]
+
+        frames = [decode_image(encoded_frames[index]) for index in indices]
+        frames = train_transforms(frames)
+
+        return frames, label
 
     the_number_of_cpu_cores = mp.cpu_count()
 
@@ -74,7 +97,7 @@ if __name__ == '__main__':
         'the_number_of_loader' : 1, 
         'the_number_of_decoder' : the_number_of_cpu_cores // 2, 
         
-        'decode_fn' : decoder_func,
+        'decode_fn' : decoder_func_for_training,
         'names' : ['image', 'label']
     }
     train_reader = Sanghyun_Reader(**train_reader_option)
@@ -89,7 +112,7 @@ if __name__ == '__main__':
         'the_number_of_loader' : 1, 
         'the_number_of_decoder' : the_number_of_cpu_cores // 2, 
         
-        'decode_fn' : decoder_func,
+        'decode_fn' : decoder_func_for_testing,
         'names' : ['image', 'label']
     }
     test_reader = Sanghyun_Reader(**test_reader_option)
@@ -103,7 +126,7 @@ if __name__ == '__main__':
         'classes' : classes
     }
 
-    train_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3])
+    train_image_var = tf.placeholder(tf.float32, [None, args.the_number_of_frame, args.image_size, args.image_size, 3])
     train_label_var = tf.placeholder(tf.int64, [None])
 
     with tf.device(tf.DeviceSpec(device_type = "GPU", device_index = gpu_id)):

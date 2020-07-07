@@ -39,15 +39,15 @@ train_dataset = {}
 test_dataset = {}
 
 for label, class_name in enumerate(class_names):
-    image_paths = glob.glob(data_dir + class_name + '/*')
-    length = len(image_paths)
+    video_paths = glob.glob(data_dir + class_name + '/*')
+    length = len(video_paths)
 
     train_length = int(length * 0.8)
 
-    for path in image_paths[:train_length]:
+    for path in video_paths[:train_length]:
         train_dataset[path] = label
 
-    for path in image_paths[train_length:]:
+    for path in video_paths[train_length:]:
         test_dataset[path] = label
 
 # print(train_dataset)
@@ -60,22 +60,36 @@ tags = ['Train', 'Test']
 datasets = [train_dataset, test_dataset]
 
 for tag, data_dic in zip(tags, datasets):
-    image_paths = list(data_dic.keys())
+    video_paths = list(data_dic.keys())
     
-    writer = Sanghyun_Writer(sanghyun_dir, tag + '_{}', 100)
+    writer = Sanghyun_Writer(sanghyun_dir, tag + '_{}', 50)
     
-    for image_path in image_paths:
-        image = cv2.imread(image_path)
-        label = data_dic[image_path]
+    for video_path in video_paths:
+        video = cv2.VideoCapture(video_path)
+        label = data_dic[video_path]
+
+        fps = video.get(cv2.CAP_PROP_FPS)
+
+        encoded_frames = []
         
-        encoded_image = encode_image(image)
+        while True:
+            ret, frame = video.read()
+            if not ret:
+                break
+
+            encoded_frame = encode_image(frame)
+            encoded_frames.append(encoded_frame)
+
+            if len(encoded_frames) >= fps * 4:
+                break
         
-        key = os.path.basename(image_path)
+        key = os.path.basename(video_path)
         example = {
-            'image_path' : image_path,
-            'encoded_image' : encoded_image,
+            'video_path' : video_path,
+            'encoded_frames' : encoded_frames,
             'label' : label
         }
         writer(key, example)
     
     writer.save()
+

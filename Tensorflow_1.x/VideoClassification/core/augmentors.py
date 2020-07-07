@@ -8,11 +8,11 @@ class DataAugmentation:
     def __init__(self, augment_functions = []):
         self.augment_functions = augment_functions
     
-    def __call__(self, image):
-        aug_image = image.copy()
+    def __call__(self, images):
+        aug_images = images.copy()
         for augment_func in self.augment_functions:
-            aug_image = augment_func(aug_image)
-        return aug_image
+            aug_images = augment_func(aug_images)
+        return aug_images
 
 class BaseAugment(DataAugmentation):
     def __init__(self, crop_size):

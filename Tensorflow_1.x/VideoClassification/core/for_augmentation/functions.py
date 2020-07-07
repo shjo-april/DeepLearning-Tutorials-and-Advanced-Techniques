@@ -15,38 +15,38 @@ class Random_HorizontalFlip:
     def __init__(self, p = 0.5):
         self.p = p
 
-    def __call__(self, x):
+    def __call__(self, xs):
         if random.random() < self.p:
-            return hflip(x)
-        return x
+            return [hflip(x) for x in xs]
+        return xs
 
 class Random_VerticalFlip:
     def __init__(self, p = 0.5):
         self.p = p
 
-    def __call__(self, x):
+    def __call__(self, xs):
         if random.random() < self.p:
-            return vflip(x)
-        return x
+            return [hflip(x) for x in xs]
+        return xs
 
 class Random_Crop:
     def __init__(self, crop_size):
         self.crop_w, self.crop_h = crop_size
 
-    def __call__(self, x):
-        h, w, c = x.shape
+    def __call__(self, xs):
+        h, w, c = xs[0].shape
         
         xmin = random.randint(0, w - self.crop_w)
         ymin = random.randint(0, h - self.crop_h)
 
-        return x[ymin : ymin + self.crop_h, xmin : xmin + self.crop_w, :]
+        return [x[ymin : ymin + self.crop_h, xmin : xmin + self.crop_w, :] for x in xs]
 
 class Random_Crop_with_Black:
     def __init__(self, crop_size):
         self.crop_w, self.crop_h = crop_size
 
-    def __call__(self, x):
-        h, w, c = x.shape
+    def __call__(self, xs):
+        h, w, c = xs[0].shape
 
         crop_w = min(self.crop_w, w)
         crop_h = min(self.crop_h, h)
@@ -68,10 +68,15 @@ class Random_Crop_with_Black:
             top = random.randrange(-space_h + 1)
             x_top = 0
 
-        image = np.zeros((self.crop_h, self.crop_w, c), dtype = np.uint8)
-        image[top:top+crop_h, left:left+crop_w] = x[x_top:x_top+crop_h, x_left:x_left+crop_w]
+        augmented_xs = []
+        
+        for x in xs:
+            image = np.zeros((self.crop_h, self.crop_w, c), dtype = np.uint8)
+            image[top:top+crop_h, left:left+crop_w] = x[x_top:x_top+crop_h, x_left:x_left+crop_w]
 
-        return image
+            augmented_xs.append(image)
+
+        return augmented_xs
 
 class Padding:
     def __init__(self, size = 4):
@@ -145,8 +150,8 @@ class Random_Resize:
         self.min_image_size = min_image_size
         self.max_image_size = max_image_size
 
-    def __call__(self, image):
-        h, w, c = image.shape
+    def __call__(self, images):
+        h, w, c = images[0].shape
         image_size = random.randint(self.min_image_size, self.max_image_size)
 
         if w < h:
@@ -154,18 +159,18 @@ class Random_Resize:
         else:
             w, h = image_size, round(h * image_size / w)
 
-        image = cv2.resize(image, (w, h), interpolation = cv2.INTER_CUBIC)
-        return image
+        images = [cv2.resize(image, (w, h), interpolation = cv2.INTER_CUBIC) for image in images]
+        return images
 
 class Fixed_Resize:
     def __init__(self, image_size):
         self.image_size = image_size
 
-    def __call__(self, image):
+    def __call__(self, images):
         try:
-            h, w, c = image.shape
+            h, w, c = images[0].shape
         except ValueError:
-            h, w = image.shape
+            h, w = images[0].shape
 
         if w > self.image_size and h > self.image_size:
             if w < h:
@@ -173,14 +178,14 @@ class Fixed_Resize:
             else:
                 w, h = self.image_size, round(h * self.image_size / w)
             
-            image = cv2.resize(image, (w, h), interpolation = cv2.INTER_CUBIC)
+            images = [cv2.resize(images, (w, h), interpolation = cv2.INTER_CUBIC) for image in images]
             
-        return image
+        return images
 
 class Top_Left_Crop:
     def __init__(self, crop_size):
         self.crop_size = crop_size
 
-    def __call__(self, image):
-        return top_left_crop(image, self.crop_size, 0)
+    def __call__(self, images):
+        return [top_left_crop(image, self.crop_size, 0) for image in images]
 
