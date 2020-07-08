@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     class_names = [line.strip() for line in open('./dataset/{}/class_names.txt'.format(args.dataset_name)).readlines()]
     classes = len(class_names)
-
+    
     # Build the model for training.
     train_option = {
         'is_training' : True,
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     with tf.device(tf.DeviceSpec(device_type = "GPU", device_index = gpu_id)):
         with tf.variable_scope(tf.get_variable_scope(), reuse = False):
-            train_model = EfficientNet_Lite(**train_option)
+            train_model = VGG16_BN_3D(**train_option)
             train_logits_op = train_model(train_image_var)
 
     class_loss_op = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = train_logits_op, labels = train_label_var))
@@ -154,6 +154,19 @@ if __name__ == '__main__':
         decay_lr_op = 0.5 * args.learning_rate * (1 + tf.cos(np.pi * tf.cast(global_step, tf.float32) / args.max_epochs))
 
         learning_rate = tf.where(global_step < warmup_epochs, warmup_lr_op, decay_lr_op)
+    elif args.learning_rate_schedule == 'step_decays':
+        epochs = args.max_epochs // 3
+
+        learning_rate = tf.where(
+            global_step < epochs, 
+            args.learning_rate, 
+
+            tf.where(
+                global_step < (epochs * 2), 
+                args.learning_rate * 0.1, 
+                args.learning_rate * 0.01
+            )
+        )
     else:
         learning_rate = args.learning_rate
 
@@ -167,7 +180,7 @@ if __name__ == '__main__':
         train_op = optimizer.minimize(loss_op, colocate_gradients_with_ops=True)
 
     # Build the model for testing.
-    test_image_var = tf.placeholder(tf.float32, [None, args.image_size, args.image_size, 3], name='images')
+    test_image_var = tf.placeholder(tf.float32, [None, args.the_number_of_frame, args.image_size, args.image_size, 3], name='images')
     test_label_var = tf.placeholder(tf.int64, [None])
 
     test_option = {
@@ -177,7 +190,7 @@ if __name__ == '__main__':
 
     with tf.device(tf.DeviceSpec(device_type = "GPU", device_index = gpu_id)):
         with tf.variable_scope(tf.get_variable_scope(), reuse = True):
-            test_logits_op = EfficientNet_Lite(**test_option)(test_image_var)
+            test_logits_op = VGG16_BN_3D(**test_option)(test_image_var)
 
     correct_op = tf.equal(tf.argmax(test_logits_op, axis = 1), test_label_var)
     test_accuracy_op = tf.reduce_mean(tf.cast(correct_op, tf.float32)) * 100
@@ -201,12 +214,6 @@ if __name__ == '__main__':
     sess.run(tf.global_variables_initializer())
     
     saver = tf.train.Saver(max_to_keep = 2)
-
-    # Restore pretrained weights from ImageNet
-    pretrained_vars = [var for var in train_vars if train_model.pretrained_model_name in var.name]
-
-    imagenet_saver = tf.train.Saver(var_list = pretrained_vars)
-    imagenet_saver.restore(sess, '../Pretrained_models/{}/model.ckpt'.format(train_model.pretrained_model_name))
 
     # training
     timer = Timer()

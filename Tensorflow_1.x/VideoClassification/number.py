@@ -1,7 +1,22 @@
+global_step = 29
+learning_rate = 1e-1
+max_epochs = 30
 
-length = 31
+epochs = max_epochs // 3
 
-a = list(range(length))
-size = len(a) // 5
+def where(condition, x1, x2):
+    if condition: return x1
+    return x2
 
-print(a, size, [a[i] for i in range(0, length - 1, size)])
+learning_rate = where(
+    global_step < epochs, 
+    learning_rate, 
+
+    where(
+        global_step < (epochs * 2), 
+        learning_rate * 0.1, 
+        learning_rate * 0.01
+    )
+)
+
+print(epochs, learning_rate)
