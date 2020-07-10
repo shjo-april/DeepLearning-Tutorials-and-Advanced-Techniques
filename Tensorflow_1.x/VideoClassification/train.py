@@ -81,7 +81,7 @@ if __name__ == '__main__':
         indices = list(range(0, length, length // args.the_number_of_frame))[:args.the_number_of_frame]
 
         frames = [decode_image(encoded_frames[index]) for index in indices]
-        frames = train_transforms(frames)
+        frames = test_transforms(frames)
 
         return frames, label
 
