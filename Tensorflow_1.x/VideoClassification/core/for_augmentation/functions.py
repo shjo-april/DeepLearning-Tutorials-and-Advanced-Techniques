@@ -178,7 +178,7 @@ class Fixed_Resize:
             else:
                 w, h = self.image_size, round(h * self.image_size / w)
             
-            images = [cv2.resize(images, (w, h), interpolation = cv2.INTER_CUBIC) for image in images]
+            images = [cv2.resize(image, (w, h), interpolation = cv2.INTER_CUBIC) for image in images]
             
         return images
 
