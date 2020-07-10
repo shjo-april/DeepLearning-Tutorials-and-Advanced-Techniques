@@ -20,11 +20,11 @@ class Classifier(Model):
     def __init__(self, dataset, gpu_usage = 0.10, detect_threshold = 0.5):
         self.load_graph('./experiments/{}/pb/model.pb'.format(dataset))
 
-        self.image_var = self.graph.get_tensor_by_name('prefix/images:0')
+        self.images_var = self.graph.get_tensor_by_name('prefix/images:0')
         self.predictions_op = self.graph.get_tensor_by_name('prefix/Classifier/predictions:0')
 
-        shape = self.image_var.shape.as_list()
-        _, self.height, self.width, _ = shape
+        shape = self.images_var.shape.as_list()
+        _, self.the_number_of_frame, self.height, self.width, _ = shape
 
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = gpu_usage
@@ -41,13 +41,16 @@ class Classifier(Model):
         self.class_names = [name.strip() for name in open('./dataset/{}/class_names.txt'.format(dataset)).readlines()]
         self.class_names = np.asarray(self.class_names)
     
-    def predict(self, image):
-        h, w, c = image.shape
+    def predict(self, frames):
+        length = len(frames)
+        indices = list(range(0, length, length // self.the_number_of_frame))[:self.the_number_of_frame]
 
-        image = self.resize_func(image)
-        image = self.crop_func(image)
+        frames = [frames[index] for index in indices]
 
-        class_prob = self.sess.run(self.predictions_op, feed_dict = {self.image_var : [image]})[0]
+        frames = self.resize_func(frames)
+        frames = self.crop_func(frames)
+
+        class_prob = self.sess.run(self.predictions_op, feed_dict = {self.images_var : [frames]})[0]
 
         class_index = np.argmax(class_prob)
         class_prob = class_prob[class_index]
@@ -67,11 +70,25 @@ if __name__ == '__main__':
 
     data_dic = read_json('./dataset/{}/test.json'.format(config.dataset_name))
     
-    for image_path in sorted(data_dic.keys()):
-        image = cv2.imread(image_path)
-        label = data_dic[image_path]
+    for video_path in sorted(data_dic.keys()):
+        video = cv2.VideoCapture(video_path)
+        label = data_dic[video_path]
 
-        class_name, class_prob = model.predict(image)
+        fps = video.get(cv2.CAP_PROP_FPS)
+        
+        frames = []
+        while True:
+            ret, frame = video.read()
+            if not ret:
+                break
+            
+            frames.append(frame)
+            if len(frames) >= fps * 4:
+                break
+        
+        print(len(frames))
 
-        print('# {}, GT = {}, Prediction {} = {:.2f}%'.format(image_path, model.class_names[label], class_name, class_prob * 100))
+        class_name, class_prob = model.predict(frames)
+
+        print('# {}, GT = {}, Prediction {} = {:.2f}%'.format(video_path, model.class_names[label], class_name, class_prob * 100))
 
